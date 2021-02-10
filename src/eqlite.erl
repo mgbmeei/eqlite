@@ -1,4 +1,5 @@
 -module(eqlite).
+-behaviour(gen_server).
 
 -export([ init/0
         , init/1
@@ -7,34 +8,81 @@
         , list_queries/0
         ]).
 
+-export([start_link/1]).
+
+-export([ handle_call/3
+        , handle_cast/2
+        , handle_info/2
+        , terminate/2
+        , code_change/3
+        , format_status/2
+        ]).
+
 -define(EQLITE_EXT, ".eqlite").
 -define(EQLITE_TAB, eqlite_table).
+-define(SERVER, {global, ?MODULE}).
+
+start_link(Directory) ->
+  gen_server:start_link(?SERVER, ?MODULE, [Directory], []).
 
 init() ->
   init(default_script_directory()).
 
-init(Directory) ->
+init([Directory]) ->
   Table = new_table(?EQLITE_TAB),
   Files = find_eqlite_files(Directory),
   Queries = parse_eqlite_files(Files),
-  file_eqlite_queries(Queries, Table).
+  file_eqlite_queries(Queries, Table),
+  {ok, ?EQLITE_TAB}.
 
 get_query(Query) ->
+  gen_server:call(?SERVER, {get_query, Query}).
+
+get_info(Query) ->
+  gen_server:call(?SERVER, {get_info, Query}).
+
+list_queries() ->
+  gen_server:call(?SERVER, list_queries).
+
+
+internal_get_query(Query) ->
   case ets:lookup(?EQLITE_TAB, Query) of
     [{Query, _Info, Statement}] -> Statement;
     _ -> undefined
   end.
 
-get_info(Query) ->
+internal_get_info(Query) ->
   case ets:lookup(?EQLITE_TAB, Query) of
     [{Query, Info, _Statement}] -> Info;
     _ -> undefined
   end.
 
-list_queries() ->
+internal_list_queries() ->
   Qs = ets:foldl(fun({Query, _, _}, Acc) -> [Query | Acc] end,
                  [], ?EQLITE_TAB),
   lists:sort(Qs).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% GEN_SERVER FUNCTIONS %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+handle_call({get_info, Query}, _From, State) ->
+  {reply, internal_get_info(Query), State};
+
+handle_call({get_query, Query}, _From, State) ->
+  {reply, internal_get_query(Query), State};
+
+handle_call(list_queries, _From, State) ->
+  {reply, internal_list_queries(), State};
+
+handle_call(_Request, _From, State) ->
+  {reply, ok, State}.
+
+handle_cast(_Request, State) -> {noreply, State}.
+handle_info(_Info, State) -> {noreply, State}.
+terminate(_Reason, _State) -> ok.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
+format_status(_Opt, Status) ->  Status.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%
@@ -43,7 +91,7 @@ list_queries() ->
 
 
 new_table(Name) ->
-  case ets:info(Name) of
+  case ets:whereis(Name) of
     undefined ->
       ets:new(Name, [named_table, set, public, {read_concurrency, true}]);
     _ ->
