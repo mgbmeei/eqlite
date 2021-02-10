@@ -33,7 +33,8 @@ init([Directory]) ->
   Files = find_eqlite_files(Directory),
   Queries = parse_eqlite_files(Files),
   file_eqlite_queries(Queries, Table),
-  {ok, ?EQLITE_TAB}.
+  {ok, Table}.
+
 
 get_query(Query) ->
   gen_server:call(?SERVER, {get_query, Query}).
@@ -131,10 +132,10 @@ parse_line(FileIO, {ok, Line}, Acc, CurrentQuery) ->
         {CurrentQuery, Acc};
       "" ->                                     % blank line
         {CurrentQuery, Acc};
-      Line ->                                   % line of code
+      Code ->                                   % line of code
         CurrentQueryMap = maps:get(CurrentQuery, Acc),
         CurrentLines = maps:get(data, CurrentQueryMap, []),
-        NewLines = CurrentLines ++ Line,
+        NewLines = CurrentLines ++ Code,
         NewQueryMap = maps:put(data, NewLines, CurrentQueryMap),
         {CurrentQuery, maps:put(CurrentQuery, NewQueryMap, Acc)}
       end,
