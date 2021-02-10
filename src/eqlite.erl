@@ -45,7 +45,7 @@ list_queries() ->
 new_table(Name) ->
   case ets:info(Name) of
     undefined ->
-      ets:new(Name, [named_table, set, {read_concurrency, true}]);
+      ets:new(Name, [named_table, set, public, {read_concurrency, true}]);
     _ ->
       Name
   end.
