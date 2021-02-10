@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+case $1 in
+
+    start)
+        docker stack deploy -c docker-compose.yml eqlite
+        ;;
+    stop)
+        docker stack rm eqlite
+        ;;
+    ps)
+        docker stack ps eqlite
+        ;;
+    shell)
+        docker attach $(docker ps --filter name=eqlite_lib --format "{{.ID}}")
+        ;;
+    *)
+        echo "start|stop|shell|ps"
+        ;;
+esac

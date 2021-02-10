@@ -1,0 +1,16 @@
+
+
+-- :find_obj
+select obj
+from objects
+-- $1 is a fancy placeholder
+where obj_id = $1
+
+
+
+-- :delete_obj
+delete from objects
+where obj_id = $1
+
+--
+-- some comments

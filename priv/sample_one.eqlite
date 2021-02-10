@@ -1,0 +1,9 @@
+--
+-- Some comment here.
+-- :get_all_users
+SELECT *
+FROM users
+
+-- Another comment.
+-- :delete_all_users Deletes all users from the user table.
+TRUNCATE TABLE users
