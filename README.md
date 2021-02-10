@@ -19,7 +19,7 @@ query or `undefined` if not found.
 `eqlite:get_info(QueryName)` will return the info string of the named
 query of `undefined` if not found.
 
-`sqlite:list_queries()` will return a lsit of (atom) query names.
+`eqlite:list_queries()` will return a lsit of (atom) query names.
 
 File Structure
 -----
