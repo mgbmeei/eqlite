@@ -103,7 +103,7 @@ default_script_directory() ->
   code:priv_dir(eqlite).
 
 find_eqlite_files(Directory) ->
-  Wildcard = filename:join(Directory, "**/*" ++ ?EQLITE_EXT),
+  Wildcard = filename:join(Directory, "**/[a-zA-Z0-9]*" ++ ?EQLITE_EXT),
   filelib:wildcard(Wildcard).
 
 parse_eqlite_files(Files) ->
