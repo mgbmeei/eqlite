@@ -25,26 +25,36 @@
 start_link(Directory) ->
   gen_server:start_link(?SERVER, ?MODULE, [Directory], []).
 
+%% @doc Load the eqlite files in the eqlite lib's priv dir.
+-spec init() -> ok.
 init() ->
   init(default_script_directory()).
 
+%% @doc Load the eqlite files from the directory or directories
+%% specified.
+-spec init(string() | [string()]) -> ok.
 init([Directory]) ->
   Table = new_table(?EQLITE_TAB),
-  Files = find_eqlite_files(Directory),
-  Queries = parse_eqlite_files(Files),
-  file_eqlite_queries(Queries, Table),
+  case is_string(Directory) of
+    true  -> load_queries(Table, Directory);
+    false -> lists:foreach(fun(D) -> load_queries(Table, D) end, Directory)
+  end,
   {ok, Table}.
 
-
+%% @doc Retrive the specified query.
+-spec get_query(atom()) -> string()
 get_query(Query) ->
   gen_server:call(?SERVER, {get_query, Query}).
 
+%% @doc Retrieve the info from the specified query.
+-spec get_info(atom()) -> string().
 get_info(Query) ->
   gen_server:call(?SERVER, {get_info, Query}).
 
+%% @doc List the avaialble queries.
+-spec list_queries() -> [atom()].
 list_queries() ->
   gen_server:call(?SERVER, list_queries).
-
 
 internal_get_query(Query) ->
   case ets:lookup(?EQLITE_TAB, Query) of
@@ -89,7 +99,13 @@ format_status(_Opt, Status) ->  Status.
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% INTERNAL FUNCTIONS %%
 %%%%%%%%%%%%%%%%%%%%%%%%
+load_queries(Table, Directory) ->
+  Files = find_eqlite_files(Directory),
+  Queries = parse_eqlite_files(Files),
+  file_eqlite_queries(Queries, Table).
 
+is_string(Subject) ->
+  io_lib:printable_unicode_list(Subject).
 
 new_table(Name) ->
   case ets:whereis(Name) of
