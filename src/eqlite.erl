@@ -3,6 +3,7 @@
 
 -export([ init/0
         , init/1
+        , stop/0
         , get_query/1
         , get_info/1
         , list_queries/0
@@ -25,6 +26,9 @@
 start_link(Directory) ->
   gen_server:start_link(?SERVER, ?MODULE, [Directory], []).
 
+stop() ->
+  gen_server:call(?SERVER, stop).
+
 %% @doc Load the eqlite files in the eqlite lib's priv dir.
 -spec init() -> ok.
 init() ->
@@ -42,7 +46,7 @@ init([Directory]) ->
   {ok, Table}.
 
 %% @doc Retrive the specified query.
--spec get_query(atom()) -> string()
+-spec get_query(atom()) -> string().
 get_query(Query) ->
   gen_server:call(?SERVER, {get_query, Query}).
 
@@ -85,6 +89,9 @@ handle_call({get_query, Query}, _From, State) ->
 
 handle_call(list_queries, _From, State) ->
   {reply, internal_list_queries(), State};
+
+handle_call(stop, _From, State) ->
+  {stop, normal, shutdown_ok, State};
 
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
