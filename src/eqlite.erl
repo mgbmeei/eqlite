@@ -7,6 +7,7 @@
         , get_query/1
         , get_info/1
         , list_queries/0
+        , refresh/0
         ]).
 
 -export([start_link/1]).
@@ -43,7 +44,7 @@ init([Directory]) ->
     true  -> load_queries(Table, Directory);
     false -> lists:foreach(fun(D) -> load_queries(Table, D) end, Directory)
   end,
-  {ok, Table}.
+  {ok, Directory}.
 
 %% @doc Retrive the specified query.
 -spec get_query(atom()) -> string().
@@ -59,6 +60,11 @@ get_info(Query) ->
 -spec list_queries() -> [atom()].
 list_queries() ->
   gen_server:call(?SERVER, list_queries).
+
+%% @doc Refresh the cache.
+-spec refresh() -> ok.
+refresh() ->
+  gen_server:call(?SERVER, refresh).
 
 internal_get_query(Query) ->
   case ets:lookup(?EQLITE_TAB, Query) of
@@ -93,6 +99,10 @@ handle_call(list_queries, _From, State) ->
 handle_call(stop, _From, State) ->
   {stop, normal, shutdown_ok, State};
 
+handle_call(refresh, _From, Directory) ->
+  {ok, Directory} = init([Directory]),
+  {reply, ok, Directory};
+
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
@@ -115,12 +125,13 @@ is_string(Subject) ->
   io_lib:printable_unicode_list(Subject).
 
 new_table(Name) ->
-  case ets:whereis(Name) of
-    undefined ->
-      ets:new(Name, [named_table, set, public, {read_concurrency, true}]);
-    _ ->
-      Name
-  end.
+  Table = case ets:whereis(Name) of
+            undefined -> ets:new(Name, [named_table, set, public,
+                                        {read_concurrency, true}]);
+            _ -> Name
+  end,
+  ets:delete_all_objects(Table),
+  Table.
 
 default_script_directory() ->
   code:priv_dir(eqlite).
