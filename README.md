@@ -44,3 +44,6 @@ Note that `-- :query_name` must start in column one!  Any text
 following the query_name is considered "info" and is stored as a human
 readable reference string.  Blank lines and lines that start with `--`
 are discarded.
+
+
+This will be discarded.
